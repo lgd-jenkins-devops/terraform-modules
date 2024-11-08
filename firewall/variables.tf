@@ -1,0 +1,5 @@
+variable "rules" {
+}
+
+variable "network" {
+}
