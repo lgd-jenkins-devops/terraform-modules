@@ -37,6 +37,7 @@ resource "google_compute_instance" "vm" {
     on_host_maintenance = "TERMINATE"
     preemptible         = true
     provisioning_model  = "SPOT"
+    instance_termination_action = "STOP"
   }
 
   service_account {
