@@ -11,4 +11,5 @@ variable "bucket-type" {
 }
 
 variable "web_site_config" {
+    default = null
 }
