@@ -2,17 +2,12 @@
 # Para obtener información sobre la validación de este código de Terraform, consulta https://developer.hashicorp.com/terraform/tutorials/gcp-get-started/google-cloud-platform-build#format-and-validate-the-configuration
 
 resource "google_compute_instance" "vm" {
+
   boot_disk {
-    auto_delete = true
+    auto_delete = var.auto_delete
     device_name = var.vm_name
-
-    initialize_params {
-      image = "projects/desarrollo-323314/global/images/jenkins"
-      size  = 20
-      type  = "pd-standard"
-    }
-
-    mode = "READ_WRITE"
+    mode        = "READ_WRITE"
+    source      = var.source_disk
   }
 
   can_ip_forward      = false
@@ -24,10 +19,6 @@ resource "google_compute_instance" "vm" {
   }
 
   machine_type = var.type
-
-  metadata = {
-    startup-script = "sudo yum install -y  wget\nsudo wget -O /etc/yum.repos.d/jenkins.repo \\\n    https://pkg.jenkins.io/redhat-stable/jenkins.repo\nsudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key\nsudo yum upgrade -y\n# Add required dependencies for the jenkins package\nsudo yum install  -y  fontconfig java-17-openjdk \nsudo yum install -y jenkins\nsudo systemctl daemon-reload"
-  }
 
   name = var.vm_name
 
@@ -46,11 +37,12 @@ resource "google_compute_instance" "vm" {
     on_host_maintenance = "TERMINATE"
     preemptible         = true
     provisioning_model  = "SPOT"
+    instance_termination_action = "STOP"
   }
 
   service_account {
     email  = var.email
-    scopes = ["https://www.googleapis.com/auth/devstorage.read_only", "https://www.googleapis.com/auth/logging.write", "https://www.googleapis.com/auth/monitoring.write", "https://www.googleapis.com/auth/service.management.readonly", "https://www.googleapis.com/auth/servicecontrol", "https://www.googleapis.com/auth/trace.append"]
+    scopes = var.scopes
   }
 
   shielded_instance_config {
@@ -59,6 +51,6 @@ resource "google_compute_instance" "vm" {
     enable_vtpm                 = true
   }
 
-  tags = ["allow-jenkins","allow-ssh-jenkins"]
-  zone = "us-central1-a"
+  tags = var.tags
+  zone = var.zone
 }
