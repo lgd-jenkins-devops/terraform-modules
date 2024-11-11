@@ -25,7 +25,7 @@ resource "google_storage_bucket" "static-site" {
 
 resource "google_storage_bucket_iam_member" "public_access" {
   for_each = var.bucket-type == "static"  ? { "enabled" = "true" } : {}
-  bucket = google_storage_bucket.static-site.name
+  bucket = google_storage_bucket.static-site["enabled"].name
   role   = "roles/storage.objectViewer"
   member = "allUsers"
 }
