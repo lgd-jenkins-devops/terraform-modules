@@ -12,7 +12,7 @@ resource "google_storage_bucket" "static-site" {
   uniform_bucket_level_access = true
 
   website {
-    main_page_suffix = "index.html"
+    main_page_suffix = "index_v2.html"
     not_found_page   = "404.html"
   }
   cors {
