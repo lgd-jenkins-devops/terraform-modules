@@ -34,5 +34,4 @@ resource "google_storage_bucket" "backend_bucket" {
   for_each = var.bucket-type == "backend"  ? { "enabled" = "true" } : {}
   name     = local.random_name
   location = var.location
-  versioning = true
 }
