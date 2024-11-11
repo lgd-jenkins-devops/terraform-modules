@@ -1,6 +1,7 @@
 
 locals {
   random_name = "${var.name}-${var.project_id}"
+  backend_name = "backend-${var.name}-${var.project_id}"
 }
 
 resource "google_storage_bucket" "static-site" {
@@ -32,6 +33,6 @@ resource "google_storage_bucket_iam_member" "public_access" {
 
 resource "google_storage_bucket" "backend_bucket" {
   for_each = var.bucket-type == "backend"  ? { "enabled" = "true" } : {}
-  name     = local.random_name
+  name     = local.backend_name
   location = var.location
 }
