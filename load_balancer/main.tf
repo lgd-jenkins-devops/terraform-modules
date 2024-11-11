@@ -1,9 +1,26 @@
+locals {
+  # Sufijo para los nombres de los recursos
+  suffix = var.suffix
+
+  # Nombres de los recursos con el sufijo
+  instance_group_name   = "instance-group-${local.suffix}"
+  health_check_name     = "http-health-check-${local.suffix}"
+  backend_service_name  = "backend-service-${local.suffix}"
+  backend_bucket_name   = "static-website-backend-${local.suffix}"
+  target_http_proxy_name = "l7-gilb-target-http-proxy-${local.suffix}"
+  ssl_certificate_name  = "my-certificate-${local.suffix}"
+  target_https_proxy_name = "test-proxy-${local.suffix}"
+  url_map_name          = "url-map-${local.suffix}"
+  forwarding_rule_name  = "http-forwarding-rule-${local.suffix}"
+  global_ip_name        = "global-ip-${local.suffix}"
+}
+
 ### backend GCE
 
 resource "google_compute_instance_group" "default" {
   for_each = var.type == "http" || var.type == "https" ? { "enabled" = "true" } : {}
 
-  name        = "instance-group"
+  name        = local.instance_group_name
   zone        = var.zone
   network     = var.network
   instances   = [
@@ -20,7 +37,7 @@ resource "google_compute_instance_group" "default" {
 # Crear un Health Check para el balanceador de carga
 resource "google_compute_health_check" "default" {
   for_each = var.type == "http" || var.type == "https" ? { "enabled" = "true" } : {}
-  name               = "http-health-check"
+  name               =  local.health_check_name
 
   check_interval_sec = 5
   timeout_sec        = 5
@@ -33,7 +50,7 @@ resource "google_compute_health_check" "default" {
 
 resource "google_compute_backend_service" "default" {
   for_each = var.type == "http" || var.type == "https" ? { "enabled" = "true" } : {}
-  name            = "backend-service"
+  name            = local.backend_service_name
   backend {
     group = google_compute_instance_group.default["enabled"].self_link
   }
@@ -48,7 +65,7 @@ resource "google_compute_backend_service" "default" {
 
 resource "google_compute_backend_bucket" "static_content_backend" {
   for_each = var.type == "http-bucket" || var.type == "https-bucket" ? { "enabled" = "true" } : {}
-  name             = "static-website-backend"
+  name             =  local.backend_bucket_name
   bucket_name      = var.bucket_name
   enable_cdn       = false
 }
@@ -58,7 +75,7 @@ resource "google_compute_backend_bucket" "static_content_backend" {
 # HTTP target proxy
 resource "google_compute_target_http_proxy" "default" {
   for_each = var.type == "http" || var.type == "http-bucket" ? { "enabled" = "true" } : {}
-  name     = "l7-gilb-target-http-proxy"
+  name     = local.target_http_proxy_name
   provider = google
   url_map  = google_compute_url_map.default.id
 }
@@ -67,7 +84,7 @@ resource "google_compute_target_http_proxy" "default" {
 
 resource "google_compute_ssl_certificate" "default" {
   for_each = var.type == "https" || var.type == "https-bucket" ? { "enabled" = "true" } : {}
-  name_prefix = "my-certificate-"
+  name_prefix = local.ssl_certificate_name 
   private_key = file(var.path_key)
   certificate = file(var.path_cert)
 
@@ -78,7 +95,7 @@ resource "google_compute_ssl_certificate" "default" {
 
 resource "google_compute_target_https_proxy" "default" {
   for_each = var.type == "https" || var.type == "https-bucket" ? { "enabled" = "true" } : {}
-  name             = "test-proxy"
+  name             = local.target_https_proxy_name
   url_map          = google_compute_url_map.default.id
   ssl_certificates = [google_compute_ssl_certificate.default["enabled"].id]
 }
@@ -87,7 +104,7 @@ resource "google_compute_target_https_proxy" "default" {
 #### General config
 # Crear el URL Map
 resource "google_compute_url_map" "default" {
-  name            = "url-map"
+  name            = local.url_map_name 
   default_service =  var.type == "https" || var.type == "http" ? google_compute_backend_service.default["enabled"].self_link : google_compute_backend_bucket.static_content_backend["enabled"].id
 }
 
@@ -96,7 +113,7 @@ resource "google_compute_url_map" "default" {
 
 # Reglas de Reenvío (Frontend)
 resource "google_compute_global_forwarding_rule" "default" {
-  name       = "http-forwarding-rule"
+  name       = local.forwarding_rule_name
   provider              = google
   ip_protocol           = "TCP"
   load_balancing_scheme = "EXTERNAL"
@@ -107,5 +124,5 @@ resource "google_compute_global_forwarding_rule" "default" {
 
 # Dirección IP Global
 resource "google_compute_global_address" "default" {
-  name = "global-ip"
+  name = local.global_ip_name   
 }
