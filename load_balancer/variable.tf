@@ -25,3 +25,6 @@ variable "type" {
 variable "bucket_name"{
     default = ""
 }
+
+variable "suffix" {
+}
